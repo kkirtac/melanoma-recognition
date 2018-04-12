@@ -6,8 +6,8 @@ layer {
   top: "data"
   top: "label"
   image_data_param {
-    root_folder: "/content/data/"
-    source: "/content/data/isbi2016_isic_part1_train.list"
+    root_folder: "data/ISBI2016_ISIC_Part1_Training_Data_processed"
+    source: "data/isbi2016_isic_part1_train.list"
     label_type: PIXEL
     batch_size: 4
     shuffle: true
@@ -29,8 +29,8 @@ layer {
   top: "data"
   top: "label"
   image_data_param {
-    root_folder: "/content/data/"
-    source: "/content/data/isbi2016_isic_part1_val.list"
+    root_folder: "data/ISBI2016_ISIC_Part1_Training_Data_processed"
+    source: "data/isbi2016_isic_part1_val.list"
     label_type: PIXEL
     batch_size: 4
     shuffle: true
