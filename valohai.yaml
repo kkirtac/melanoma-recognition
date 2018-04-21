@@ -20,7 +20,7 @@
         type: integer
         default: 10
 - step:
-    name: Tensorflow re-training with Outokumpu data
+    name: Tensorflow re-training
     image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
     command:
       - cd /valohai/inputs/checkpoints
