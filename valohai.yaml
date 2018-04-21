@@ -1,0 +1,175 @@
+---
+
+- step:
+    name: Execute python predict_toy.py
+    image: gcr.io/tensorflow/tensorflow:1.0.1-devel-gpu-py3
+    command:
+      - pip3 install -r requirements.txt
+      - python3 predict_toy.py
+    inputs:
+      - name: toy-data
+        optional: true
+        default: s3://silohai/test_data.pkl
+      - name: image-data
+        optional: false
+        default: s3://silohai/training_images.zip
+    parameters:
+      - name: n_estimators
+        pass-as: --n-estimators={v}
+        description: Number of trees in Random Forest
+        type: integer
+        default: 10
+- step:
+    name: Tensorflow re-training with Outokumpu data
+    image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
+    command:
+      - cd /valohai/inputs/checkpoints
+      - tar -xvf inception_resnet_v2_2016_08_30.tar.gz
+      - cd /valohai/inputs/models
+      - unzip master.zip
+      - cd /valohai/repository
+      - python3 retrain.py {parameters}
+    inputs:
+      - name: training-data
+        optional: false
+        default: s3://silohai/outokumpu_train.tfrecords
+      - name: validation-data
+        optional: false
+        default: s3://silohai/outokumpu_validation.tfrecords
+      - name: checkpoints
+        default: http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz
+      - name: models
+        default: https://github.com/tensorflow/models/archive/master.zip
+    parameters:
+      - name: max_steps
+        pass-as: --max_steps={v}
+        description: How many training steps to run before ending.
+        type: integer
+        default: 10000
+      - name: learning_rate
+        pass-as: --learning_rate={v}
+        description: How large a learning rate to use when training.
+        type: float
+        default: 1e-4
+      - name: train_batch_size
+        pass-as: --train_batch_size={v}
+        description: How many images to train on at a time.
+        type: integer
+        default: 128
+      - name: validation_batch_size
+        pass-as: --validation_batch_size={v}
+        description: How many images to use in an evaluation batch.
+        type: integer
+        default: -1
+      - name: model_dir
+        pass-as: --model_dir={v}
+        type: string
+        default: /valohai/inputs/checkpoints
+      - name: init_chkpt_path
+        pass-as: --init_chkpt_path
+        type: string
+        default: /valohai/inputs/checkpoints/inception_resnet_v2_2016_08_30.ckpt
+- step:
+    name: Tensorflow softmax training with deep features
+    image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
+    command:
+      - python3 outokumpu_softmax.py {parameters}
+    inputs:
+      - name: training_part1
+      - name: training_part2
+      - name: training_part3
+      - name: training_part4
+      - name: training_part5
+      - name: training_part6
+      - name: training_part7
+      - name: training_part8
+      - name: training_part9
+      - name: validation_v1
+    parameters:
+      - name: batch_size
+        pass-as: --batch_size={v}
+        type: integer
+        default: 128
+      - name: num_epochs
+        pass-as: --num_epochs={v}
+        type: integer
+        default: 10
+      - name: classifier
+        pass-as: --classifier={v}
+        type: string
+        default: softmax
+      - name: learning_rate
+        pass-as: --learning_rate={v}
+        type: float
+        default: 0.5
+      - name: training_files_dir
+        pass-as: --training_files_dir={v}
+        type: string
+      - name: validation_files_dir
+        pass-as: --validation_files_dir={v}
+        type: string
+      - name: save_path
+        pass-as: --save_path={v}
+        type: string
+        default: /valohai/outputs/model.ckpt
+- step:
+    name: Tensorflow feature extraction with Outokumpu data
+    image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
+    command:
+      - cd /valohai/inputs/checkpoints
+      - tar -xvf inception_resnet_v2_2016_08_30.tar.gz
+      - cd /valohai/inputs/models
+      - unzip master.zip
+      - cd /valohai/repository
+      - python3 deep_feature_extraction.py {parameters}
+    inputs:
+      - name: training-data
+        optional: false
+        default: s3://silohai/outokumpu_train_v2.tfrecords
+      - name: training-mean-image
+        optional: false
+        default: s3://silohai/outokumpu_train_mean.npy
+      - name: training-std-image
+        optional: false
+        default: s3://silohai/outokumpu_train_std.npy
+      - name: checkpoints
+        default: http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz
+      - name: models
+        default: https://github.com/tensorflow/models/archive/master.zip
+    parameters:
+      - name: file_name
+        pass-as: --file_name={v}
+        type: string
+        default: /valohai/inputs/training-data/outokumpu_train_v2.tfrecords
+      - name: mean_image_path
+        pass-as: --mean_image_path={v}
+        type: string
+        default: /valohai/inputs/training-mean-image/outokumpu_train_mean.npy
+      - name: std_image_path
+        pass-as: --std_image_path={v}
+        type: string
+        default: /valohai/inputs/training-std-image/outokumpu_train_std.npy
+      - name: network_name
+        pass-as: --network_name={v}
+        type: string
+        default: inception_resnet_v2
+      - name: batch_size
+        pass-as: --batch_size={v}
+        type: integer
+        default: 128
+      - name: path_to_slim_dir
+        pass-as: --path_to_slim_dir={v}
+        type: string
+        default: /valohai/inputs/models/models-master/research/slim
+      - name: exclude_layers
+        pass-as: --exclude_layers={v}
+        type: string
+        default: InceptionResnetV2/Logits,InceptionResnetV2/AuxLogits
+      - name: path_to_model_ckpt
+        pass-as: --path_to_model_ckpt={v}
+        type: string
+        default: /valohai/inputs/checkpoints/inception_resnet_v2_2016_08_30.ckpt
+      - name: outFeatureFile
+        pass-as: --outFeatureFile={v}
+        type: string
+        default: /valohai/outputs/deep_features_training_v1.pkl
