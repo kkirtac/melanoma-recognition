@@ -32,10 +32,10 @@
     inputs:
       - name: training-data
         optional: false
-        default: s3://silohai/outokumpu_train.tfrecords
+        default: s3://silohai/train.tfrecords
       - name: validation-data
         optional: false
-        default: s3://silohai/outokumpu_validation.tfrecords
+        default: s3://silohai/validation.tfrecords
       - name: checkpoints
         default: http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz
       - name: models
@@ -69,51 +69,9 @@
         pass-as: --init_chkpt_path
         type: string
         default: /valohai/inputs/checkpoints/inception_resnet_v2_2016_08_30.ckpt
+
 - step:
-    name: Tensorflow softmax training with deep features
-    image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
-    command:
-      - python3 outokumpu_softmax.py {parameters}
-    inputs:
-      - name: training_part1
-      - name: training_part2
-      - name: training_part3
-      - name: training_part4
-      - name: training_part5
-      - name: training_part6
-      - name: training_part7
-      - name: training_part8
-      - name: training_part9
-      - name: validation_v1
-    parameters:
-      - name: batch_size
-        pass-as: --batch_size={v}
-        type: integer
-        default: 128
-      - name: num_epochs
-        pass-as: --num_epochs={v}
-        type: integer
-        default: 10
-      - name: classifier
-        pass-as: --classifier={v}
-        type: string
-        default: softmax
-      - name: learning_rate
-        pass-as: --learning_rate={v}
-        type: float
-        default: 0.5
-      - name: training_files_dir
-        pass-as: --training_files_dir={v}
-        type: string
-      - name: validation_files_dir
-        pass-as: --validation_files_dir={v}
-        type: string
-      - name: save_path
-        pass-as: --save_path={v}
-        type: string
-        default: /valohai/outputs/model.ckpt
-- step:
-    name: Tensorflow feature extraction with Outokumpu data
+    name: Tensorflow feature extraction
     image: valohai/hauki:tensorflow1.4.1-python3.5-opencv3.4-dlib19.8-cuda8.0-cudnn6.0-devel-ubuntu16.04
     command:
       - cd /valohai/inputs/checkpoints
@@ -125,13 +83,13 @@
     inputs:
       - name: training-data
         optional: false
-        default: s3://silohai/outokumpu_train_v2.tfrecords
+        default: s3://silohai/train_v2.tfrecords
       - name: training-mean-image
         optional: false
-        default: s3://silohai/outokumpu_train_mean.npy
+        default: s3://silohai/train_mean.npy
       - name: training-std-image
         optional: false
-        default: s3://silohai/outokumpu_train_std.npy
+        default: s3://silohai/train_std.npy
       - name: checkpoints
         default: http://download.tensorflow.org/models/inception_resnet_v2_2016_08_30.tar.gz
       - name: models
@@ -140,15 +98,15 @@
       - name: file_name
         pass-as: --file_name={v}
         type: string
-        default: /valohai/inputs/training-data/outokumpu_train_v2.tfrecords
+        default: /valohai/inputs/training-data/train_v2.tfrecords
       - name: mean_image_path
         pass-as: --mean_image_path={v}
         type: string
-        default: /valohai/inputs/training-mean-image/outokumpu_train_mean.npy
+        default: /valohai/inputs/training-mean-image/train_mean.npy
       - name: std_image_path
         pass-as: --std_image_path={v}
         type: string
-        default: /valohai/inputs/training-std-image/outokumpu_train_std.npy
+        default: /valohai/inputs/training-std-image/train_std.npy
       - name: network_name
         pass-as: --network_name={v}
         type: string
