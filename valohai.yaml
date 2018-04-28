@@ -17,3 +17,5 @@
         default: http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz
       - name: models
         default: https://github.com/tensorflow/models/archive/master.zip
+      - name: training-data
+        default: melanoma_train.tfrecords
