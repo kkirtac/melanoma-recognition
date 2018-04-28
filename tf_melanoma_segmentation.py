@@ -1,5 +1,5 @@
 import os,sys
-sys.path.append("/valohai/inputs/models/research/slim")
+sys.path.append("/valohai/inputs/models/models-master/research/slim")
 
 import numpy as np
 import tensorflow.contrib.slim as slim

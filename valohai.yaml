@@ -11,7 +11,7 @@
       - cd /valohai/inputs/models
       - unzip master.zip
       - cd /valohai/repository
-      - python3 tf-melanoma-segmentation.py
+      - python3 tf_melanoma_segmentation.py
     inputs:
       - name: pretrained
         default: http://download.tensorflow.org/models/resnet_v1_50_2016_08_28.tar.gz
