@@ -240,24 +240,21 @@ def inference(features, labels, params):
       #resnet_v1_50/conv1 (1, 113, 113, 64)
       
   with tf.variable_scope('scale_fcn'):
-    upscore2 = upscore_layer(scale5, shape = tf.shape(scale4), num_classes = num_classes, name = "upscore2", ksize = 4, stride = 2) 
+    score_scale5 = score_layer(scale5, "score_scale5", num_classes = num_classes)
+    upscore_scale5 =  upscore_layer(score_scale5, shape = tf.shape(scale4), num_classes = num_classes, name = "upscore_scale5", ksize = 4, stride = 2)
+
     score_scale4 = score_layer(scale4, "score_scale4", num_classes = num_classes)
-    fuse_scale4 = tf.add(upscore2, score_scale4)
-      
-    upscore4 = upscore_layer(fuse_scale4, shape = tf.shape(scale3), num_classes = num_classes, name = "upscore4", ksize = 4, stride = 2) 
+    fuse_scale4 = tf.add(upscore_scale5, score_scale4)
+
+    upscore_fuse4 = upscore_layer(fuse_scale4, shape = tf.shape(scale3), num_classes = num_classes, name = "upscore_fuse4", ksize = 4, stride = 2)
+
     score_scale3 = score_layer(scale3, "score_scale3", num_classes = num_classes)
-    fuse_scale3 = tf.add(upscore4, score_scale3)
-      
-    upscore8 = upscore_layer(fuse_scale3, shape = tf.shape(scale2), num_classes = num_classes, name = "upscore8", ksize = 4, stride = 2) 
-    #score_scale2 = score_layer(scale2, "score_scale2", num_classes = num_classes)
-    #fuse_scale2 = tf.add(upscore8, score_scale2)
-    
-    #upscore32 = upscore_layer(fuse_scale2, shape = tf.shape(input_x), num_classes = num_classes, name = "upscore32", ksize = 8, stride = 4)
-      
-    upscore32 = upscore_layer(upscore8, shape = tf.shape(input_x), num_classes = num_classes, name = "upscore32", ksize = 8, stride = 4)
-    
-    pred_up = tf.argmax(upscore32, axis = 3)
-    pred = tf.expand_dims(pred_up, dim = 3, name='pred')     
+    fuse_scale3 = tf.add(upscore_fuse4, score_scale3)
+
+    upscore_fuse3 = upscore_layer(fuse_scale3, shape = tf.shape(input_x), num_classes = num_classes, name = "upscore_fuse3", ksize = 16, stride = 8)
+
+    pred_up = tf.argmax(upscore_fuse3, axis = 3)
+    pred = tf.expand_dims(pred_up, dim = 3, name='pred')
       
   # Using tf.losses, any loss is added to the tf.GraphKeys.LOSSES collection
   # We can then call the total loss easily    
@@ -270,7 +267,7 @@ def inference(features, labels, params):
   # print(sess.run(tf.shape(labels["label"])))
   # sess.close()
     
-  tf.losses.sparse_softmax_cross_entropy(labels=labels["label"], logits=upscore32)
+  tf.losses.sparse_softmax_cross_entropy(labels=labels["label"], logits=upscore_fuse3)
   loss = tf.losses.get_total_loss()
   
   ## Compute evaluation metrics.
@@ -314,42 +311,44 @@ def inference(features, labels, params):
   var_resnet_batchnorm = [var for var in tf.trainable_variables() if ('conv1/BatchNorm' in var.name or 'conv2/BatchNorm' in var.name or 'conv3/BatchNorm' in var.name)] 
   
   var_upscale = [var for var in tf.trainable_variables() if 'score' in var.name]
-  for varr in var_upscale:
-    print(varr.name)
-  
+
   var_rest = [var for var in tf.trainable_variables() if var.name not in var_resnet_batchnorm+var_upscale]
-  
+
   # this is as stated in the paper and prototxt file,
   # https://github.com/yulequan/melanoma-recognition/blob/master/segmentation/ResNet-50-f8s-skin-train-val.prototxt
   # batchnorm filters placed just after each convolutional layer in each resnet block, are not trained.
   # so we set zero learning for these variables
-  opt1 = tf.train.GradientDescentOptimizer(0)
-  
+  #opt1 = tf.train.GradientDescentOptimizer(0)
+
   # this is also due to the prototxt file and the paper,
   # scoring and upsampling filters receive 0.1 * learning rate
   # https://github.com/yulequan/melanoma-recognition/blob/master/segmentation/ResNet-50-f8s-skin-train-val.prototxt
   opt2 = tf.train.GradientDescentOptimizer(lr*0.1)
-  
+
   # rest of the variables receive the current learning rate
   opt3 = tf.train.GradientDescentOptimizer(lr)
-  
+
   # gradient op: obtain the gradients with loss and given variables
-  grads = tf.gradients(loss, var_resnet_batchnorm + var_upscale + var_rest)
-  
+  #grads = tf.gradients(loss, var_resnet_batchnorm + var_upscale + var_rest)
+  grads = tf.gradients(loss, var_upscale + var_rest)
+
   # grads for the first set of variables, currently has no effect due to zero learning rate.
-  grads1 = grads[:len(var_resnet_batchnorm)]
-  
+  #grads1 = grads[:len(var_resnet_batchnorm)]
+
   # grads for scoring and upsampling filters. Will get updated based on 0.1*learning_rate
-  grads2 = grads[len(var_resnet_batchnorm):len(var_resnet_batchnorm)+len(var_upscale)]
-  
+  #grads2 = grads[len(var_resnet_batchnorm):len(var_resnet_batchnorm)+len(var_upscale)]
+  grads2 = grads[:len(var_upscale)]
+
   # grads for rest of the variables
-  grads3 = grads[len(var_resnet_batchnorm)+len(var_upscale):]
-  
-  train_op1 = opt1.apply_gradients(zip(grads1, var_resnet_batchnorm), global_step=global_step)
+  #grads3 = grads[len(var_resnet_batchnorm)+len(var_upscale):]
+  grads3 = grads[len(var_upscale):]
+
+  #train_op1 = opt1.apply_gradients(zip(grads1, var_resnet_batchnorm), global_step=global_step)
   train_op2 = opt2.apply_gradients(zip(grads2, var_upscale), global_step=global_step)
   train_op3 = opt3.apply_gradients(zip(grads3, var_rest), global_step=global_step)
-  
-  train_op = tf.group(train_op1, train_op2, train_op3)
+
+  #train_op = tf.group(train_op1, train_op2, train_op3)
+  train_op = tf.group(train_op2, train_op3)
 
 
   ##### exponential weight decaying for learning rate #####
