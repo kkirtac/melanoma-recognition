@@ -4,8 +4,6 @@
     name: Tensorflow melanoma segmentation
     image: tensorflow/tensorflow:1.7.0-devel-gpu-py3
     command:
-      - mkdir save_model_path
-      - chmod 775 /valohai/save_model_path
       - cd /valohai/inputs/pretrained
       - tar -xvf resnet_v1_50_2016_08_28.tar.gz
       - cd /valohai/inputs/models

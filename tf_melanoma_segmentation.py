@@ -4,7 +4,7 @@ sys.path.append("/valohai/inputs/models/models-master/research/slim")
 import numpy as np
 import tensorflow.contrib.slim as slim
 from tensorflow.contrib.slim.nets import resnet_v1
-
+import tensorflow as tf
 
 def parser(record):
   """Parses input records and returns batch_size samples
@@ -369,7 +369,7 @@ def inference(features, labels, params):
 filename = '/valohai/inputs/training-data/melanoma_train.tfrecords'
 batch_size=1
 epochs=50
-save_model_path='/valohai/save_model_path'
+save_model_path='/valohai/outputs'
 restore_ckpt_path='/valohai/inputs/pretrained/resnet_v1_50.ckpt'
 initial_learning_rate=1e-3
 num_classes=2
