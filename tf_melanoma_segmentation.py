@@ -74,7 +74,7 @@ def my_input_fn(filename, batch_size, epochs):
   ).map(
       parser
   ).shuffle(
-      buffer_size=100
+      buffer_size=1000
   ).batch(
       batch_size
   ).repeat(
@@ -262,13 +262,13 @@ def inference(features, labels, params):
   # Using tf.losses, any loss is added to the tf.GraphKeys.LOSSES collection
   # We can then call the total loss easily    
 
-  sess = tf.Session()
-  sess.run(tf.global_variables_initializer())
-  sess.run(tf.local_variables_initializer())
-  print(sess.run(tf.shape(features["image"])))
-  print(sess.run(tf.shape(upscore32)))
-  print(sess.run(tf.shape(labels["label"])))
-  sess.close()
+  # sess = tf.Session()
+  # sess.run(tf.global_variables_initializer())
+  # sess.run(tf.local_variables_initializer())
+  # print(sess.run(tf.shape(features["image"])))
+  # print(sess.run(tf.shape(upscore32)))
+  # print(sess.run(tf.shape(labels["label"])))
+  # sess.close()
     
   tf.losses.sparse_softmax_cross_entropy(labels=labels["label"], logits=upscore32)
   loss = tf.losses.get_total_loss()
@@ -417,7 +417,7 @@ with tf.Session() as sess:
       if train_step % print_every == 0:
         print('training mIOU: {},  step: {}'.format(acc, train_step))
 
-      if train_step % 10000 == 0:
+      if train_step % 5000 == 0:
         save_path = saver.save(sess, save_model_path)
 
       
