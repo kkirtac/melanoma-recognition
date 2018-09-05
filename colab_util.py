@@ -49,12 +49,16 @@ def extract_archive(zip_path, target_folder='./', verbose=False):
     result = subprocess.check_output(cmd, shell=True).decode('utf-8')
     if verbose: print(result)
 
+	
 class GoogleDriveHandler:
-    def __init__(self):
-        auth.authenticate_user()
-        gauth = GoogleAuth()
-        gauth.credentials = GoogleCredentials.get_application_default()
-        self.drive = GoogleDrive(gauth)
+    def __init__(self, drive=None):
+		if not drive:
+			auth.authenticate_user()
+			gauth = GoogleAuth()
+			gauth.credentials = GoogleCredentials.get_application_default()
+			self.drive = GoogleDrive(gauth)
+		else:
+			self.drive = drive
 
     def path_to_id(self, rel_path, parent_folder_id='root'):
         rel_path = '/'.join(list(filter(len, rel_path.split('/'))))
